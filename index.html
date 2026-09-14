@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Only For You | Forever & Always</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <!-- Canvas Confetti CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Great+Vibes&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            rosegold: {
+              200: '#fae6e8',
+              300: '#f4d2d7',
+              400: '#e5a5ad',
+              500: '#b76e79',
+              600: '#9b5660',
+              glow: 'rgba(183, 110, 121, 0.4)',
+            },
+            night: '#0a0a0c',
+          },
+          fontFamily: {
+            cinzel: ['Cinzel', 'serif'],
+            script: ['"Great Vibes"', 'cursive'],
+            playfair: ['"Playfair Display"', 'serif'],
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Glassmorphism Classes */
+    .glass-panel {
+      background: rgba(18, 18, 24, 0.75);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(183, 110, 121, 0.25);
+      box-shadow: 0 10px 35px -5px rgba(0, 0, 0, 0.8), 0 0 25px -5px rgba(183, 110, 121, 0.2);
+    }
+
+    .glass-card-polaroid {
+      background: rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+    .glass-card-polaroid:hover {
+      transform: translateY(-8px) scale(1.02);
+      border-color: rgba(183, 110, 121, 0.6);
+      box-shadow: 0 20px 40px -10px rgba(183, 110, 121, 0.35);
+    }
+
+    .text-rosegold-gradient {
+      background: linear-gradient(135deg, #fae6e8 0%, #e5a5ad 45%, #b76e79 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* Vinyl Spinning */
+    @keyframes spin-disc {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .animate-spin-slow {
+      animation: spin-disc 7s linear infinite;
+    }
+    .spin-paused {
+      animation-play-state: paused;
+    }
+
+    /* Typewriter Cursor */
+    .typewriter-cursor {
+      display: inline-block;
+      width: 2px;
+      background-color: #e5a5ad;
+      animation: blink 0.9s infinite;
+      margin-left: 3px;
+      vertical-align: middle;
+    }
+    @keyframes blink {
+      0%, 49% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+
+    .ambient-radial {
+      background: radial-gradient(circle at 50% 15%, rgba(183, 110, 121, 0.18) 0%, rgba(10, 10, 12, 0.98) 75%);
+    }
+
+    /* Click heart burst */
+    .click-heart {
+      position: fixed;
+      pointer-events: none;
+      z-index: 9999;
+      animation: floatUpFade 1s forwards ease-out;
+    }
+    @keyframes floatUpFade {
+      0% { transform: translate(-50%, -50%) scale(0.6); opacity: 1; }
+      100% { transform: translate(-50%, -120px) scale(1.4); opacity: 0; }
+    }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #0a0a0c; }
+    ::-webkit-scrollbar-thumb { background: #b76e79; border-radius: 999px; }
+  </style>
+</head>
+
+<body class="bg-night text-zinc-300 font-sans antialiased selection:bg-rosegold-500 selection:text-white relative overflow-x-hidden min-h-screen">
+
+  <!-- ================= AUDIO ELEMENT ================= -->
+  <audio id="bgMusic" loop preload="auto">
+    <source src="music.mp3" type="audio/mpeg">
+  </audio>
+
+  <!-- ================= BACKGROUND PARTICLES CANVAS ================= -->
+  <canvas id="particleCanvas" class="fixed inset-0 pointer-events-none z-0"></canvas>
+
+  <!-- ================= NOTIFICATION ALERT (WHEN MUSIC PAUSED) ================= -->
+  <div id="musicAlert" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 glass-panel px-6 py-3.5 rounded-full border border-rosegold-400/50 shadow-2xl flex items-center gap-3 transform -translate-y-28 transition-all duration-500">
+    <i class="fa-solid fa-heart-crack text-rosegold-400 animate-bounce text-lg"></i>
+    <span class="text-xs sm:text-sm text-zinc-200 font-medium">আরে গান বন্ধ কেন? গান ছাড়া ম্যাজিক কাজ করবে না! 🥺</span>
+    <button onclick="playAudio()" class="bg-rosegold-500 hover:bg-rosegold-600 text-white text-xs px-3.5 py-1.5 rounded-full font-cinzel transition-all ml-1 shadow-md">
+      চালিয়ে দাও 🎵
+    </button>
+  </div>
+
+  <!-- ================= MANDATORY ENTRY OVERLAY ================= -->
+  <div id="welcomeOverlay" class="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-2xl transition-opacity duration-700 px-4">
+    <div class="relative max-w-md w-full p-8 md:p-10 rounded-3xl glass-panel text-center border border-rosegold-500/40 shadow-[0_0_70px_rgba(183,110,121,0.3)]">
+      
+      <!-- Notification Badge -->
+      <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-rosegold-500/15 border border-rosegold-400/30 text-[11px] text-rosegold-300 font-cinzel mb-4 tracking-wider">
+        <i class="fa-solid fa-bell animate-wiggle text-rosegold-400"></i>
+        <span>Audio Permission Required</span>
+      </div>
+
+      <!-- Pulsing Heart Centerpiece -->
+      <div class="relative mx-auto w-20 h-20 mb-5 flex items-center justify-center">
+        <div class="absolute inset-0 rounded-full bg-rosegold-500/20 animate-ping"></div>
+        <div class="relative w-16 h-16 rounded-full bg-gradient-to-tr from-rosegold-600 to-rosegold-400 flex items-center justify-center text-white text-2xl shadow-xl shadow-rosegold-500/50">
+          <i class="fa-solid fa-headphones animate-pulse"></i>
+        </div>
+      </div>
+
+      <h1 class="font-cinzel text-2xl sm:text-3xl font-bold tracking-wider text-white mb-2">Our Private Universe</h1>
+      <p class="font-script text-2xl text-rosegold-300 mb-4">Crafted Only For My Queen</p>
+      
+      <p class="text-xs sm:text-sm text-zinc-400 font-light mb-8 leading-relaxed">
+        এই ওয়েবসাইটটি ফিল করার জন্য গান শোনা বাধ্যতামূলক! নিচের বোতামে ক্লিক করো এবং আমাদের বিশেষ গানটি চালু করো 💖
+      </p>
+
+      <button id="enterBtn" class="group relative inline-flex items-center justify-center px-8 py-4 w-full font-medium tracking-wide text-white transition-all duration-300 rounded-full bg-gradient-to-r from-rosegold-600 via-rosegold-500 to-rosegold-400 hover:shadow-[0_0_35px_rgba(183,110,121,0.7)] hover:scale-[1.02] active:scale-95">
+        <i class="fa-solid fa-play mr-3 text-xs"></i>
+        <span class="font-cinzel text-sm tracking-widest uppercase font-semibold">Play Our Song & Enter</span>
+      </button>
+
+      <p class="mt-4 text-[10px] text-zinc-500 uppercase tracking-widest font-cinzel">Music Required for Entry</p>
+    </div>
+  </div>
+
+  <!-- ================= FLOATING VINYL PLAYER ================= -->
+  <div class="fixed bottom-6 right-6 z-40 flex items-center gap-3">
+    <div id="musicStatusText" class="hidden md:block glass-panel py-1.5 px-4 rounded-full text-xs text-rosegold-300 border-rosegold-500/30 opacity-0 transition-opacity duration-300 pointer-events-none font-medium">
+      Playing Our Soundtrack 🎶
+    </div>
+    
+    <button id="musicToggleBtn" aria-label="Toggle Music" class="relative group w-14 h-14 rounded-full glass-panel flex items-center justify-center text-rosegold-400 border border-rosegold-500/40 shadow-xl shadow-black hover:border-rosegold-400 hover:text-white transition-all duration-300">
+      <div id="vinylDisc" class="absolute inset-1 rounded-full border border-dashed border-rosegold-400/30 animate-spin-slow spin-paused"></div>
+      <i id="musicIcon" class="fa-solid fa-play text-lg z-10 ml-0.5 group-hover:scale-110 transition-transform"></i>
+      <span id="musicRipple" class="hidden absolute inset-0 rounded-full border border-rosegold-400/40 animate-ping"></span>
+    </button>
+  </div>
+
+  <!-- ================= MAIN CONTENT ================= -->
+  <div class="relative z-10 ambient-radial">
+
+    <!-- HERO SECTION -->
+    <header class="min-h-screen flex flex-col items-center justify-center text-center px-6 py-20 relative">
+      <div class="max-w-3xl mx-auto space-y-6">
+        
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass-panel border border-rosegold-500/30 text-xs text-rosegold-300 tracking-widest uppercase font-cinzel">
+          <i class="fa-solid fa-infinity text-rosegold-400 text-xs"></i>
+          <span>Forever & A Day More</span>
+        </div>
+
+        <h1 class="font-cinzel text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white leading-tight">
+          You Are My <br/>
+          <span class="text-rosegold-gradient font-script text-6xl sm:text-8xl md:text-9xl capitalize block mt-2">Favorite Story</span>
+        </h1>
+
+        <p class="font-playfair italic text-lg sm:text-2xl text-zinc-300 max-w-xl mx-auto font-light leading-relaxed">
+          &ldquo;হাজার মানুষের মাঝেও আমার চোখ শুধু তোমাকেই খুঁজে ফেরে, আর সবসময় তোমাতেই শান্তি পায়।&rdquo;
+        </p>
+
+        <div class="pt-8 flex flex-wrap items-center justify-center gap-4">
+          <a href="#gallery" class="px-7 py-3.5 rounded-full glass-panel text-white hover:text-rosegold-300 border-rosegold-500/30 hover:border-rosegold-400 text-xs font-cinzel tracking-widest uppercase transition-all duration-300">
+            Our Memories
+          </a>
+          <a href="#coupons" class="px-7 py-3.5 rounded-full bg-gradient-to-r from-rosegold-600 to-rosegold-500 text-white text-xs font-cinzel tracking-widest uppercase hover:shadow-[0_0_25px_rgba(183,110,121,0.5)] transition-all duration-300 hover:scale-105">
+            Claim Love Coupons 🎁
+          </a>
+        </div>
+      </div>
+
+      <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-60">
+        <span class="text-[10px] uppercase font-cinzel tracking-widest text-zinc-400">Scroll for more magic</span>
+        <i class="fa-solid fa-chevron-down text-rosegold-400 animate-bounce text-xs"></i>
+      </div>
+    </header>
+
+
+    <!-- ================= MEMORY LANE (POLAROID PHOTO GALLERY) ================= -->
+    <section id="gallery" class="py-24 px-6 md:px-12 max-w-7xl mx-auto">
+      <div class="text-center max-w-2xl mx-auto mb-16 space-y-3">
+        <span class="font-cinzel text-xs tracking-widest uppercase text-rosegold-400">Captured Moments</span>
+        <h2 class="font-playfair text-3xl sm:text-5xl text-white font-semibold">Memory Lane</h2>
+        <div class="w-16 h-0.5 bg-gradient-to-r from-transparent via-rosegold-500 to-transparent mx-auto mt-4"></div>
+        <p class="text-zinc-400 text-sm md:text-base font-light pt-2">
+          আমাদের প্রতিটা হাসির পেছনে আছে এক পৃথিবী ভালোবাসা।
+        </p>
+      </div>
+
+      <!-- Grid with 4 photos -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        
+        <!-- CARD 1 -->
+        <div class="glass-card-polaroid rounded-2xl p-4 flex flex-col group cursor-pointer">
+          <div class="relative overflow-hidden rounded-xl aspect-[4/5] bg-zinc-900">
+            <img 
+              src="https://i.ibb.co.com/TBWSZxJX/IMG-20260914-102104-763.jpg" 
+              alt="Romantic Memory 1" 
+              loading="lazy"
+              class="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-700 ease-out"
+            />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          </div>
+          <div class="pt-4 pb-2 px-1 text-center">
+            <span class="font-script text-2xl text-rosegold-300 block mb-1">Sweet Beginning</span>
+            <p class="text-xs text-zinc-400 font-light">যেখান থেকে আমার সমস্ত ভালোবাসা তোমাতে এসে শেষ হয়।</p>
+          </div>
+        </div>
+
+        <!-- CARD 2 -->
+        <div class="glass-card-polaroid rounded-2xl p-4 flex flex-col group cursor-pointer sm:translate-y-4 lg:translate-y-6">
+          <div class="relative overflow-hidden rounded-xl aspect-[4/5] bg-zinc-900">
+            <img 
+              src="https://i.ibb.co.com/TBJd3Ffz/IMG-20260914-123017-025.jpg" 
+              alt="Romantic Memory 2" 
+              loading="lazy"
+              class="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-700 ease-out"
+            />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          </div>
+          <div class="pt-4 pb-2 px-1 text-center">
+            <span class="font-script text-2xl text-rosegold-300 block mb-1">Your Gentle Smile</span>
+            <p class="text-xs text-zinc-400 font-light">তোমার একটা মিষ্টি হাসিতে আমার সব ক্লান্তি হাওয়া হয়ে যায়।</p>
+          </div>
+        </div>
+
+        <!-- CARD 3 -->
+        <div class="glass-card-polaroid rounded-2xl p-4 flex flex-col group cursor-pointer">
+          <div class="relative overflow-hidden rounded-xl aspect-[4/5] bg-zinc-900">
+            <img 
+              src="https://i.ibb.co.com/dJVHzgBF/20260914-220050.jpg" 
+              alt="Romantic Memory 3" 
+              loading="lazy"
+              class="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-700 ease-out"
+            />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          </div>
+          <div class="pt-4 pb-2 px-1 text-center">
+            <span class="font-script text-2xl text-rosegold-300 block mb-1">Precious Night</span>
+            <p class="text-xs text-zinc-400 font-light">রাতের চাঁদের চেয়েও তোমার চোখের মায়া আমার বেশি প্রিয়।</p>
+          </div>
+        </div>
+
+        <!-- CARD 4 -->
+        <div class="glass-card-polaroid rounded-2xl p-4 flex flex-col group cursor-pointer sm:translate-y-4 lg:translate-y-6">
+          <div class="relative overflow-hidden rounded-xl aspect-[4/5] bg-zinc-900">
+            <img 
+              src="https://i.ibb.co.com/5hHxyhV7/20260914-220114.jpg" 
+              alt="Romantic Memory 4" 
+              loading="lazy"
+              class="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-700 ease-out"
+            />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          </div>
+          <div class="pt-4 pb-2 px-1 text-center">
+            <span class="font-script text-2xl text-rosegold-300 block mb-1">Endless Tomorrow</span>
+            <p class="text-xs text-zinc-400 font-light">প্রতিটি আগামীতে আমি কেবল তোমার হাত ধরেই হাঁটতে চাই।</p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- ================= INTERACTIVE LOVE COUPONS (SCRATCH/CLAIM EFFECT) ================= -->
+    <section id="coupons" class="py-20 px-6 max-w-6xl mx-auto">
+      <div class="text-center max-w-2xl mx-auto mb-14 space-y-2">
+        <span class="font-cinzel text-xs tracking-widest uppercase text-rosegold-400">Special Gifts For You</span>
+        <h2 class="font-playfair text-3xl sm:text-4xl text-white">Your Love Coupons 🎟️</h2>
+        <p class="text-xs sm:text-sm text-zinc-400">ক্লিক করে তোমার কুপনগুলো রিডিম (Redeem) করে নাও! যে কোনো সময় দাবি করতে পারো!</p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        
+        <!-- Coupon 1 -->
+        <div onclick="redeemCoupon(this, 'Midnight Ice Cream Date 🍦')" class="cursor-pointer group relative glass-panel p-6 rounded-2xl border-dashed border-2 border-rosegold-500/40 hover:border-rosegold-400 transition-all text-center">
+          <div class="text-3xl mb-2 group-hover:scale-125 transition-transform duration-300">🍨</div>
+          <h3 class="font-cinzel text-base text-white font-semibold">Midnight Ice Cream Date</h3>
+          <p class="text-xs text-zinc-400 my-2 font-light">রাত যত গভীরই হোক, তোমার মন চাইলেই আইসক্রিম ডেট নিশ্চিত!</p>
+          <span class="inline-block mt-2 px-4 py-1 rounded-full text-[10px] uppercase tracking-wider font-cinzel font-semibold bg-rosegold-500/20 text-rosegold-300 group-hover:bg-rosegold-500 group-hover:text-white transition-colors">
+            Tap To Redeem
+          </span>
+        </div>
+
+        <!-- Coupon 2 -->
+        <div onclick="redeemCoupon(this, 'Win Any Argument Without Logic 👑')" class="cursor-pointer group relative glass-panel p-6 rounded-2xl border-dashed border-2 border-rosegold-500/40 hover:border-rosegold-400 transition-all text-center">
+          <div class="text-3xl mb-2 group-hover:scale-125 transition-transform duration-300">👑</div>
+          <h3 class="font-cinzel text-base text-white font-semibold">Win Any Argument Pass</h3>
+          <p class="text-xs text-zinc-400 my-2 font-light">যুক্তি ছাড়াই যেকোনো ঝগড়ায় এক নিমেষে তুমি বিজয়ী!</p>
+          <span class="inline-block mt-2 px-4 py-1 rounded-full text-[10px] uppercase tracking-wider font-cinzel font-semibold bg-rosegold-500/20 text-rosegold-300 group-hover:bg-rosegold-500 group-hover:text-white transition-colors">
+            Tap To Redeem
+          </span>
+        </div>
+
+        <!-- Coupon 3 -->
+        <div onclick="redeemCoupon(this, 'Unlimited Warm Hugs 🫂')" class="cursor-pointer group relative glass-panel p-6 rounded-2xl border-dashed border-2 border-rosegold-500/40 hover:border-rosegold-400 transition-all text-center">
+          <div class="text-3xl mb-2 group-hover:scale-125 transition-transform duration-300">🫂</div>
+          <h3 class="font-cinzel text-base text-white font-semibold">Unlimited Hugs & Cuddles</h3>
+          <p class="text-xs text-zinc-400 my-2 font-light">কোনো এক্সপায়ারি ডেট নেই—যতক্ষণ ইচ্ছা বুকে জড়িয়ে থাকার অধিকার।</p>
+          <span class="inline-block mt-2 px-4 py-1 rounded-full text-[10px] uppercase tracking-wider font-cinzel font-semibold bg-rosegold-500/20 text-rosegold-300 group-hover:bg-rosegold-500 group-hover:text-white transition-colors">
+            Tap To Redeem
+          </span>
+        </div>
+
+        <!-- Coupon 4 -->
+        <div onclick="redeemCoupon(this, 'Movie Night + Her Choice 🍿')" class="cursor-pointer group relative glass-panel p-6 rounded-2xl border-dashed border-2 border-rosegold-500/40 hover:border-rosegold-400 transition-all text-center">
+          <div class="text-3xl mb-2 group-hover:scale-125 transition-transform duration-300">🍿</div>
+          <h3 class="font-cinzel text-base text-white font-semibold">Movie Night + Her Choice</h3>
+          <p class="text-xs text-zinc-400 my-2 font-light">সিনেমা তোমার পছন্দের হবে, আর সাথে প্রিয় স্ন্যাক্স বানানোর দায়িত্ব আমার!</p>
+          <span class="inline-block mt-2 px-4 py-1 rounded-full text-[10px] uppercase tracking-wider font-cinzel font-semibold bg-rosegold-500/20 text-rosegold-300 group-hover:bg-rosegold-500 group-hover:text-white transition-colors">
+            Tap To Redeem
+          </span>
+        </div>
+
+        <!-- Coupon 5 -->
+        <div onclick="redeemCoupon(this, 'Angry Mood Softener Pass 🥺')" class="cursor-pointer group relative glass-panel p-6 rounded-2xl border-dashed border-2 border-rosegold-500/40 hover:border-rosegold-400 transition-all text-center">
+          <div class="text-3xl mb-2 group-hover:scale-125 transition-transform duration-300">🧁</div>
+          <h3 class="font-cinzel text-base text-white font-semibold">Instant Mood Booster</h3>
+          <p class="text-xs text-zinc-400 my-2 font-light">মন খারাপ থাকলে কান ধরে সরি বলা ও পছন্দের চকলেট উপহার দেওয়ার গ্যারান্টি!</p>
+          <span class="inline-block mt-2 px-4 py-1 rounded-full text-[10px] uppercase tracking-wider font-cinzel font-semibold bg-rosegold-500/20 text-rosegold-300 group-hover:bg-rosegold-500 group-hover:text-white transition-colors">
+            Tap To Redeem
+          </span>
+        </div>
+
+        <!-- Coupon 6 -->
+        <div onclick="redeemCoupon(this, 'Lifetime Heart Residence 💍')" class="cursor-pointer group relative glass-panel p-6 rounded-2xl border-dashed border-2 border-rosegold-500/40 hover:border-rosegold-400 transition-all text-center">
+          <div class="text-3xl mb-2 group-hover:scale-125 transition-transform duration-300">💍</div>
+          <h3 class="font-cinzel text-base text-white font-semibold">Lifetime Heart Membership</h3>
+          <p class="text-xs text-zinc-400 my-2 font-light">আমার হৃদয়ে তোমার আজীবন স্থায়ী ঠিকানা। নো রিফান্ড, নো ক্যান্সেলেশন!</p>
+          <span class="inline-block mt-2 px-4 py-1 rounded-full text-[10px] uppercase tracking-wider font-cinzel font-semibold bg-rosegold-500/20 text-rosegold-300 group-hover:bg-rosegold-500 group-hover:text-white transition-colors">
+            Tap To Redeem
+          </span>
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- ================= FUN & PLAYFUL MINI GAME: "DO YOU LOVE ME?" ================= -->
+    <section class="py-20 px-6 max-w-3xl mx-auto text-center">
+      <div class="glass-panel p-8 sm:p-12 rounded-3xl border border-rosegold-500/30 relative">
+        <span class="text-3xl mb-3 block animate-bounce">💖</span>
+        <h3 class="font-playfair text-2xl sm:text-4xl text-white mb-3">Honest Question Time!</h3>
+        <p class="text-zinc-300 text-sm sm:text-base mb-8">তুমি কি আমাকে সত্যিই অনেক অনেক ভালোবাসো?</p>
+
+        <div id="gameButtonArea" class="relative min-h-[90px] flex items-center justify-center gap-6">
+          <button id="yesBtn" onclick="handleYesClick()" class="px-8 py-3.5 rounded-full bg-gradient-to-r from-rosegold-600 to-rosegold-400 text-white font-cinzel text-sm font-semibold tracking-wider hover:scale-110 shadow-lg shadow-rosegold-500/40 transition-all">
+            YES, Absolutely! 🥰
+          </button>
+
+          <!-- Runaway "NO" Button -->
+          <button id="noBtn" onmouseover="moveNoButton()" onclick="moveNoButton()" class="px-8 py-3.5 rounded-full bg-zinc-800 text-zinc-400 font-cinzel text-sm tracking-wider border border-zinc-700 transition-all duration-200 absolute">
+            NO 😜
+          </button>
+        </div>
+
+        <div id="yesMessage" class="hidden mt-6 text-rosegold-300 font-script text-3xl animate-pulse">
+          I knew it! তুমি আমাকে ভালো না বেসে থাকতেই পারবে না! 🥰💍
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ================= "OPEN WHEN..." SECRET LETTERS ================= -->
+    <section class="py-20 px-6 max-w-5xl mx-auto text-center">
+      <div class="mb-12">
+        <span class="font-cinzel text-xs tracking-widest uppercase text-rosegold-400">Emergency Love Notes</span>
+        <h2 class="font-playfair text-3xl sm:text-4xl text-white mt-1">Open When You Need Me 💌</h2>
+      </div>
+
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <button onclick="openNote('sad')" class="p-5 glass-panel rounded-2xl hover:border-rosegold-400 transition-all group">
+          <span class="text-2xl block mb-2 group-hover:scale-125 transition-transform">🌧️</span>
+          <p class="text-xs font-cinzel text-zinc-200">When You're Sad</p>
+        </button>
+
+        <button onclick="openNote('miss')" class="p-5 glass-panel rounded-2xl hover:border-rosegold-400 transition-all group">
+          <span class="text-2xl block mb-2 group-hover:scale-125 transition-transform">🥺</span>
+          <p class="text-xs font-cinzel text-zinc-200">When You Miss Me</p>
+        </button>
+
+        <button onclick="openNote('angry')" class="p-5 glass-panel rounded-2xl hover:border-rosegold-400 transition-all group">
+          <span class="text-2xl block mb-2 group-hover:scale-125 transition-transform">😤</span>
+          <p class="text-xs font-cinzel text-zinc-200">When Angry At Me</p>
+        </button>
+
+        <button onclick="openNote('sleep')" class="p-5 glass-panel rounded-2xl hover:border-rosegold-400 transition-all group">
+          <span class="text-2xl block mb-2 group-hover:scale-125 transition-transform">🌙</span>
+          <p class="text-xs font-cinzel text-zinc-200">Can't Sleep</p>
+        </button>
+      </div>
+    </section>
+
+
+    <!-- ================= INFINITE LOVE CALCULATOR ================= -->
+    <section class="py-16 px-6 max-w-3xl mx-auto text-center">
+      <div class="glass-panel p-8 rounded-3xl border border-rosegold-500/30">
+        <h3 class="font-cinzel text-xs uppercase tracking-widest text-rosegold-400 mb-2">Love Meter Test</h3>
+        <h2 class="font-playfair text-2xl sm:text-3xl text-white mb-6">How Deep Is My Love For You?</h2>
+
+        <div class="w-full bg-zinc-800/80 rounded-full h-5 overflow-hidden p-0.5 mb-4 border border-zinc-700">
+          <div id="loveBar" class="bg-gradient-to-r from-rosegold-600 via-rosegold-400 to-pink-400 h-full rounded-full transition-all duration-300 w-0"></div>
+        </div>
+
+        <p id="loveMeterText" class="font-cinzel text-sm text-zinc-400 mb-6">Click below to calculate...</p>
+
+        <button id="calcBtn" onclick="runLoveCalculator()" class="px-6 py-2.5 rounded-full glass-panel border-rosegold-500/40 text-rosegold-300 hover:bg-rosegold-500 hover:text-white text-xs font-cinzel tracking-widest uppercase transition-all">
+          Calculate My Love 💖
+        </button>
+      </div>
+    </section>
+
+
+    <!-- ================= TYPEWRITER LOVE LETTER SECTION ================= -->
+    <section id="letter" class="py-24 px-6 md:px-12 max-w-4xl mx-auto">
+      <div class="relative glass-panel rounded-3xl p-8 sm:p-14 border border-rosegold-500/30 shadow-[0_0_50px_rgba(183,110,121,0.15)] overflow-hidden">
+        
+        <div class="flex justify-between items-center border-b border-rosegold-500/20 pb-6 mb-8">
+          <div>
+            <span class="text-[11px] font-cinzel uppercase tracking-widest text-rosegold-400 block">Confession of Soul</span>
+            <h3 class="font-playfair text-2xl sm:text-3xl text-white font-medium">Dear Sweetheart,</h3>
+          </div>
+          <div class="w-12 h-12 rounded-full border border-rosegold-400/40 flex items-center justify-center text-rosegold-300">
+            <i class="fa-solid fa-feather-pointed text-lg"></i>
+          </div>
+        </div>
+
+        <div class="font-playfair text-base sm:text-xl text-zinc-200 leading-relaxed min-h-[160px] relative">
+          <span id="typewriterText" class="font-light leading-loose tracking-wide"></span><span id="typewriterCursor" class="typewriter-cursor h-5"></span>
+
+          <div id="signatureBlock" class="mt-10 pt-6 border-t border-rosegold-500/10 opacity-0 transition-opacity duration-1000">
+            <p class="text-sm font-light text-zinc-400 font-sans">সারাজীবনের জন্য শুধুই তোমার,</p>
+            <p class="font-script text-3xl sm:text-4xl text-rosegold-300 mt-1">Forever Yours ❤️</p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- ================= FOOTER ================= -->
+    <footer class="py-12 border-t border-zinc-900 text-center text-zinc-500 text-xs">
+      <div class="flex items-center justify-center gap-2 mb-2">
+        <span>Made with every single beat of my heart</span>
+        <i class="fa-solid fa-heart text-rosegold-500 text-xs animate-pulse"></i>
+      </div>
+      <p class="font-cinzel tracking-widest uppercase text-[10px] text-zinc-600">Exclusive Gift Just For You</p>
+    </footer>
+
+  </div>
+
+
+  <!-- ================= POPUP NOTE MODAL ================= -->
+  <div id="noteModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md opacity-0 pointer-events-none transition-opacity duration-300 px-4">
+    <div class="glass-panel p-8 rounded-3xl max-w-md w-full text-center relative border border-rosegold-400/40">
+      <div id="modalIcon" class="text-4xl mb-3">💌</div>
+      <h3 id="modalTitle" class="font-cinzel text-xl text-white font-bold mb-3">Note Title</h3>
+      <p id="modalBody" class="font-playfair text-sm text-zinc-300 leading-relaxed mb-6 font-light">Note content...</p>
+      <button onclick="closeNote()" class="px-6 py-2 rounded-full bg-rosegold-500 text-white text-xs font-cinzel tracking-widest uppercase hover:bg-rosegold-600 transition-colors">
+        Close with a smile 😊
+      </button>
+    </div>
+  </div>
+
+
+  <!-- ================= JAVASCRIPT ENGINE ================= -->
+  <script>
+    /* -------------------------------------------------------------
+       1. CANVAS FLOATING HEARTS & PARTICLES
+    ------------------------------------------------------------- */
+    const canvas = document.getElementById('particleCanvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    class HeartParticle {
+      constructor() { this.reset(); }
+      reset() {
+        this.x = Math.random() * canvas.width;
+        this.y = canvas.height + Math.random() * 80;
+        this.size = Math.random() * 12 + 6;
+        this.speedY = Math.random() * 0.8 + 0.35;
+        this.speedX = Math.sin(Math.random() * 2) * 0.35;
+        this.opacity = Math.random() * 0.45 + 0.15;
+        this.scale = Math.random() * 0.6 + 0.4;
+        this.rotation = (Math.random() - 0.5) * 0.4;
+      }
+      update() {
+        this.y -= this.speedY;
+        this.x += this.speedX;
+        if (this.y < -30) this.reset();
+      }
+      draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation);
+        ctx.scale(this.scale, this.scale);
+        ctx.fillStyle = `rgba(229, 165, 173, ${this.opacity})`;
+        ctx.beginPath();
+        const topCurveHeight = this.size * 0.3;
+        ctx.moveTo(0, topCurveHeight);
+        ctx.bezierCurveTo(0, 0, -this.size / 2, 0, -this.size / 2, topCurveHeight);
+        ctx.bezierCurveTo(-this.size / 2, (this.size + topCurveHeight) / 2, 0, this.size, 0, this.size);
+        ctx.bezierCurveTo(0, this.size, this.size / 2, (this.size + topCurveHeight) / 2, this.size / 2, topCurveHeight);
+        ctx.bezierCurveTo(this.size / 2, 0, 0, 0, 0, topCurveHeight);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    const particleCount = window.innerWidth < 768 ? 20 : 35;
+    for (let i = 0; i < particleCount; i++) particles.push(new HeartParticle());
+
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => { p.update(); p.draw(); });
+      requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+
+    /* -------------------------------------------------------------
+       2. CLICK-ANYWHERE HEART EXPLOSION EFFECT
+    ------------------------------------------------------------- */
+    window.addEventListener('click', function(e) {
+      // Don't trigger on interactive buttons to avoid clutter
+      if (e.target.closest('button') || e.target.closest('a')) return;
+
+      const heart = document.createElement('div');
+      heart.className = 'click-heart text-rosegold-400 text-2xl';
+      heart.innerHTML = '💖';
+      heart.style.left = e.clientX + 'px';
+      heart.style.top = e.clientY + 'px';
+      document.body.appendChild(heart);
+      setTimeout(() => heart.remove(), 1000);
+    });
+
+
+    /* -------------------------------------------------------------
+       3. AUDIO CONTROLS & STRICT MUSIC LOCK
+    ------------------------------------------------------------- */
+    const bgMusic = document.getElementById('bgMusic');
+    const welcomeOverlay = document.getElementById('welcomeOverlay');
+    const enterBtn = document.getElementById('enterBtn');
+    const musicToggleBtn = document.getElementById('musicToggleBtn');
+    const musicIcon = document.getElementById('musicIcon');
+    const vinylDisc = document.getElementById('vinylDisc');
+    const musicRipple = document.getElementById('musicRipple');
+    const musicStatusText = document.getElementById('musicStatusText');
+    const musicAlert = document.getElementById('musicAlert');
+    let isMusicPlaying = false;
+
+    function playAudio() {
+      bgMusic.play().then(() => {
+        isMusicPlaying = true;
+        updateMusicUI(true);
+        hideMusicAlert();
+      }).catch(err => {
+        console.warn("Browser blocked audio", err);
+      });
+    }
+
+    function pauseAudio() {
+      bgMusic.pause();
+      isMusicPlaying = false;
+      updateMusicUI(false);
+      showMusicAlert();
+    }
+
+    function showMusicAlert() {
+      musicAlert.classList.remove('-translate-y-28');
+      musicAlert.classList.add('translate-y-0');
+    }
+    function hideMusicAlert() {
+      musicAlert.classList.remove('translate-y-0');
+      musicAlert.classList.add('-translate-y-28');
+    }
+
+    function updateMusicUI(playing) {
+      if (playing) {
+        musicIcon.classList.replace('fa-play', 'fa-pause');
+        vinylDisc.classList.remove('spin-paused');
+        musicRipple.classList.remove('hidden');
+        musicStatusText.classList.remove('opacity-0');
+        setTimeout(() => musicStatusText.classList.add('opacity-0'), 2500);
+      } else {
+        musicIcon.classList.replace('fa-pause', 'fa-play');
+        vinylDisc.classList.add('spin-paused');
+        musicRipple.classList.add('hidden');
+        musicStatusText.classList.add('opacity-0');
+      }
+    }
+
+    musicToggleBtn.addEventListener('click', () => {
+      if (isMusicPlaying) pauseAudio();
+      else playAudio();
+    });
+
+    // Enter & Unlock logic
+    enterBtn.addEventListener('click', () => {
+      playAudio();
+      confetti({ particleCount: 80, spread: 80, origin: { y: 0.6 } });
+      welcomeOverlay.style.opacity = '0';
+      setTimeout(() => {
+        welcomeOverlay.style.display = 'none';
+        startTypewriter();
+      }, 700);
+    });
+
+
+    /* -------------------------------------------------------------
+       4. LOVE COUPON REDEMPTION WITH CONFETTI
+    ------------------------------------------------------------- */
+    function redeemCoupon(element, couponName) {
+      confetti({
+        particleCount: 50,
+        spread: 60,
+        origin: { y: 0.7 }
+      });
+      element.innerHTML = `
+        <div class="text-3xl mb-2 animate-bounce">🎉</div>
+        <h3 class="font-cinzel text-base text-rosegold-300 font-bold">REDEEMED!</h3>
+        <p class="text-xs text-white font-medium my-2">${couponName}</p>
+        <span class="inline-block mt-2 px-3 py-1 rounded-full text-[10px] uppercase font-cinzel bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+          ✓ Claimed for Life
+        </span>
+      `;
+      element.classList.add('border-rosegold-400', 'bg-rosegold-500/10');
+      element.onclick = null; // single use redemption visual
+    }
+
+
+    /* -------------------------------------------------------------
+       5. RUNAWAY "NO" BUTTON (CANNOT BE CLICKED)
+    ------------------------------------------------------------- */
+    const noBtn = document.getElementById('noBtn');
+    function moveNoButton() {
+      const x = (Math.random() - 0.5) * 260;
+      const y = (Math.random() - 0.5) * 160;
+      noBtn.style.transform = `translate(${x}px, ${y}px)`;
+    }
+
+    function handleYesClick() {
+      confetti({
+        particleCount: 150,
+        spread: 100,
+        origin: { y: 0.6 }
+      });
+      document.getElementById('yesMessage').classList.remove('hidden');
+      noBtn.style.display = 'none';
+    }
+
+
+    /* -------------------------------------------------------------
+       6. "OPEN WHEN..." SECRET NOTES MODAL
+    ------------------------------------------------------------- */
+    const notes = {
+      sad: {
+        icon: '🌦️',
+        title: 'When You Feel Sad',
+        body: 'মনে রাখবে, আকাশ মেঘলা হলেও সূর্য হারিয়ে যায় না। ঠিক তেমনি যতই খারাপ সময় আসুক, আমি সবসময় তোমার পাশে শক্ত হয়ে দাঁড়িয়ে আছি। এক কাপ কফি খাও আর আমাকে একটা কল দাও, সব ঠিক হয়ে যাবে!'
+      },
+      miss: {
+        icon: '🌙',
+        title: 'When You Miss Me',
+        body: 'বুকের বাঁ পাশে হাত দিয়ে চোখ বন্ধ করো। যে স্পন্দনটা শুনতে পাচ্ছ, সেখানেই আমি আছি। দূরত্ব কেবল কিলোমিটারের, আমার সমস্ত অস্তিত্ব কেবল তোমার জন্যই ভালোবাসায় কাঁপে।'
+      },
+      angry: {
+        icon: '🥺',
+        title: 'When You Are Angry At Me',
+        body: 'আই অ্যাম সো সরি জানপাখি! আমি হয়তো মাঝেমধ্যে বোকাদের মতো কাজ করি বা অবুঝ হয়ে যাই, কিন্তু তোমাকে কষ্ট দেওয়ার উদ্দেশ্য কখনোই থাকে না। বকা দিয়ে হলেও আমার সাথে কথা বলো প্লিজ!'
+      },
+      sleep: {
+        icon: '✨',
+        title: 'When You Cannot Sleep',
+        body: 'সব চিন্তা দূরে সরিয়ে রেখে শান্ত হয়ে চোখ বন্ধ করো। আজকের দিনটি শেষ হয়েছে, আর কাল সকালে আরও সুন্দর একটা দিন অপেক্ষা করছে। ঘুমাও আমার রাজকন্যা, স্বপ্নে দেখা হচ্ছে!'
+      }
+    };
+
+    function openNote(type) {
+      const data = notes[type];
+      document.getElementById('modalIcon').innerText = data.icon;
+      document.getElementById('modalTitle').innerText = data.title;
+      document.getElementById('modalBody').innerText = data.body;
+      const modal = document.getElementById('noteModal');
+      modal.classList.remove('opacity-0', 'pointer-events-none');
+    }
+
+    function closeNote() {
+      const modal = document.getElementById('noteModal');
+      modal.classList.add('opacity-0', 'pointer-events-none');
+    }
+
+
+    /* -------------------------------------------------------------
+       7. INFINITE LOVE CALCULATOR
+    ------------------------------------------------------------- */
+    function runLoveCalculator() {
+      const bar = document.getElementById('loveBar');
+      const text = document.getElementById('loveMeterText');
+      const btn = document.getElementById('calcBtn');
+      btn.disabled = true;
+      btn.classList.add('opacity-50', 'cursor-not-allowed');
+
+      let percent = 0;
+      const interval = setInterval(() => {
+        percent += 4;
+        bar.style.width = Math.min(percent, 100) + '%';
+        text.innerText = `Calculating: ${percent}%...`;
+
+        if (percent > 100) {
+          clearInterval(interval);
+          bar.style.width = '100%';
+          text.innerHTML = '<span class="text-rosegold-300 font-bold text-base animate-pulse">ERROR: Love Limit Exceeded! 9999999% (Infinite ♾️)</span>';
+          confetti({ particleCount: 100, spread: 70 });
+        }
+      }, 50);
+    }
+
+
+    /* -------------------------------------------------------------
+       8. TYPEWRITER LOVE LETTER SCRIPT
+    ------------------------------------------------------------- */
+    const letterContent = 
+      "যদি পৃথিবীর সমস্ত ফুলও এনে তোমার চরণে সাজিয়ে দিই, তবুও তোমার প্রতি আমার ভালোবাসার এক শতাংশও প্রকাশ করা সম্ভব হবে না। " +
+      "আমার জীবনের সমস্ত অস্থিরতার মাঝে তুমিই একমাত্র প্রশান্তি। তোমার উপস্থিতি আমার সাধারণ দিনগুলোকে অসম্ভব সুন্দর করে তোলে। " +
+      "আমি প্রতিজ্ঞা করছি, প্রতিটি ঋতুতে, প্রতিটি হাসিতে এবং প্রতিটি চোখের জলে আমি তোমাকেই ভালোবেসে যাবো।";
+
+    const typewriterEl = document.getElementById('typewriterText');
+    const typewriterCursor = document.getElementById('typewriterCursor');
+    const signatureBlock = document.getElementById('signatureBlock');
+    let charIndex = 0;
+    let hasStartedTypewriter = false;
+
+    function startTypewriter() {
+      if (hasStartedTypewriter) return;
+      hasStartedTypewriter = true;
+
+      function typeChar() {
+        if (charIndex < letterContent.length) {
+          typewriterEl.textContent += letterContent.charAt(charIndex);
+          charIndex++;
+          setTimeout(typeChar, 35);
+        } else {
+          typewriterCursor.style.display = 'none';
+          signatureBlock.classList.remove('opacity-0');
+        }
+      }
+      setTimeout(typeChar, 600);
+    }
+  </script>
+</body>
+</html>
